@@ -815,7 +815,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 .AddForeignKey(new[] { orderIdProperty }, firstKey, firstEntity);
 
             var navigation = firstEntity.AddSkipNavigation(
-                nameof(Order.Products), null, secondEntity, foreignKey, true, true);
+                nameof(Order.Products), null, secondEntity, foreignKey, true, false);
 
             Assert.Equal(CoreStrings.ForeignKeyInUseSkipNavigation(
                 "{'" + nameof(OrderProduct.OrderId) + "'}", nameof(OrderProduct), nameof(Order.Products), nameof(Order)),
@@ -865,17 +865,17 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             Assert.Equal(nameof(Order.Customer), customerNavigation.Name);
             Assert.Same(orderType, customerNavigation.DeclaringEntityType);
             Assert.Same(customerForeignKey, customerNavigation.ForeignKey);
-            Assert.True(customerNavigation.IsDependentToPrincipal());
-            Assert.False(customerNavigation.IsCollection());
-            Assert.Same(customerType, customerNavigation.GetTargetType());
+            Assert.True(customerNavigation.IsOnDependent);
+            Assert.False(customerNavigation.IsCollection);
+            Assert.Same(customerType, customerNavigation.TargetEntityType);
             Assert.Same(customerNavigation, customerForeignKey.DependentToPrincipal);
 
             Assert.Equal(nameof(Customer.Orders), ordersNavigation.Name);
             Assert.Same(customerType, ordersNavigation.DeclaringEntityType);
             Assert.Same(customerForeignKey, ordersNavigation.ForeignKey);
-            Assert.False(ordersNavigation.IsDependentToPrincipal());
-            Assert.True(ordersNavigation.IsCollection());
-            Assert.Same(orderType, ordersNavigation.GetTargetType());
+            Assert.False(ordersNavigation.IsOnDependent);
+            Assert.True(ordersNavigation.IsCollection);
+            Assert.Same(orderType, ordersNavigation.TargetEntityType);
             Assert.Same(ordersNavigation, customerForeignKey.PrincipalToDependent);
 
             Assert.Same(customerNavigation, orderType.GetNavigations().Single());
@@ -907,12 +907,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             Assert.Equal(nameof(Order.Customer), customerNavigation.Name);
             Assert.Same(orderType, customerNavigation.DeclaringEntityType);
             Assert.Same(customerForeignKey, customerNavigation.ForeignKey);
-            Assert.True(customerNavigation.IsDependentToPrincipal());
-            Assert.False(customerNavigation.IsCollection());
-            Assert.Same(customerType, customerNavigation.GetTargetType());
+            Assert.True(customerNavigation.IsOnDependent);
+            Assert.False(customerNavigation.IsCollection);
+            Assert.Same(customerType, customerNavigation.TargetEntityType);
 
             Assert.Same(customerNavigation, orderType.FindNavigation(nameof(Order.Customer)));
-            Assert.True(customerNavigation.IsDependentToPrincipal());
+            Assert.True(customerNavigation.IsOnDependent);
         }
 
         [ConditionalFact]
@@ -1057,9 +1057,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             Assert.Equal(nameof(Customer.Orders), ordersNavigation.Name);
             Assert.Same(customerType, ordersNavigation.DeclaringEntityType);
             Assert.Same(customerForeignKey, ordersNavigation.ForeignKey);
-            Assert.False(ordersNavigation.IsDependentToPrincipal());
-            Assert.True(ordersNavigation.IsCollection());
-            Assert.Same(orderType, ordersNavigation.GetTargetType());
+            Assert.False(ordersNavigation.IsOnDependent);
+            Assert.True(ordersNavigation.IsCollection);
+            Assert.Same(orderType, ordersNavigation.TargetEntityType);
             Assert.Same(ordersNavigation, customerForeignKey.PrincipalToDependent);
         }
 
@@ -1115,9 +1115,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             Assert.Equal("Customer", customerNavigation.Name);
             Assert.Same(orderType, customerNavigation.DeclaringEntityType);
             Assert.Same(customerForeignKey, customerNavigation.ForeignKey);
-            Assert.True(customerNavigation.IsDependentToPrincipal());
-            Assert.False(customerNavigation.IsCollection());
-            Assert.Same(customerType, customerNavigation.GetTargetType());
+            Assert.True(customerNavigation.IsOnDependent);
+            Assert.False(customerNavigation.IsCollection);
+            Assert.Same(customerType, customerNavigation.TargetEntityType);
         }
 
         [ConditionalFact]
@@ -1192,7 +1192,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             var customerForeignKey = orderEntity
                 .AddForeignKey(customerFkProperty, customerKey, customerEntity);
             var relatedNavigation = orderEntity.AddSkipNavigation(
-                nameof(Order.RelatedOrder), null, orderEntity, customerForeignKey, false, false);
+                nameof(Order.RelatedOrder), null, orderEntity, customerForeignKey, false, true);
+
+            Assert.True(relatedNavigation.IsOnDependent);
 
             var productEntity = model.AddEntityType(typeof(Product));
             var orderProductEntity = model.AddEntityType(typeof(OrderProduct));
@@ -1201,7 +1203,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 .AddForeignKey(new[] { orderProductFkProperty }, orderKey, orderEntity);
 
             var productsNavigation = orderEntity.AddSkipNavigation(
-                nameof(Order.Products), null, productEntity, orderProductForeignKey, true, true);
+                nameof(Order.Products), null, productEntity, orderProductForeignKey, true, false);
 
             Assert.Equal(new[] { productsNavigation, relatedNavigation }, orderEntity.GetSkipNavigations());
             Assert.Empty(customerEntity.GetSkipNavigations());
@@ -1228,13 +1230,13 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 .AddForeignKey(new[] { orderProductFkProperty }, orderKey, orderEntity);
 
             var navigation = orderEntity.AddSkipNavigation(
-                nameof(Order.Products), null, productEntity, orderProductForeignKey, true, true);
+                nameof(Order.Products), null, productEntity, orderProductForeignKey, true, false);
 
             Assert.Equal(
                 CoreStrings.ConflictingPropertyOrNavigation(nameof(Order.Products), typeof(Order).Name, typeof(Order).Name),
                 Assert.Throws<InvalidOperationException>(() =>
                 orderEntity.AddSkipNavigation(
-                    nameof(Order.Products), null, productEntity, orderProductForeignKey, true, true)).Message);
+                    nameof(Order.Products), null, productEntity, orderProductForeignKey, true, false)).Message);
         }
 
         [ConditionalFact]
@@ -1259,7 +1261,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 CoreStrings.ConflictingPropertyOrNavigation(nameof(Order.Products), typeof(Order).Name, typeof(Order).Name),
                 Assert.Throws<InvalidOperationException>(() =>
                 orderEntity.AddSkipNavigation(
-                    nameof(Order.Products), null, productEntity, orderProductForeignKey, true, true)).Message);
+                    nameof(Order.Products), null, productEntity, orderProductForeignKey, true, false)).Message);
         }
 
         [ConditionalFact]
@@ -1281,7 +1283,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 CoreStrings.ConflictingPropertyOrNavigation(nameof(Order.Products), typeof(Order).Name, typeof(Order).Name),
                 Assert.Throws<InvalidOperationException>(() =>
                 orderEntity.AddSkipNavigation(
-                    nameof(Order.Products), null, productEntity, orderProductForeignKey, true, true)).Message);
+                    nameof(Order.Products), null, productEntity, orderProductForeignKey, true, false)).Message);
         }
 
         [ConditionalFact]
@@ -1303,7 +1305,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 CoreStrings.ConflictingPropertyOrNavigation(nameof(Order.Products), typeof(Order).Name, typeof(Order).Name),
                 Assert.Throws<InvalidOperationException>(() =>
                 orderEntity.AddSkipNavigation(
-                    nameof(Order.Products), null, productEntity, orderProductForeignKey, true, true)).Message);
+                    nameof(Order.Products), null, productEntity, orderProductForeignKey, true, false)).Message);
         }
 
         [ConditionalFact]
@@ -1323,7 +1325,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 CoreStrings.ClrPropertyOnShadowEntity(nameof(Order.Products), nameof(Order)),
                 Assert.Throws<InvalidOperationException>(
                     () => orderEntity.AddSkipNavigation(
-                        nameof(Order.Products), Order.ProductsProperty, productEntity, orderProductForeignKey, true, true)).Message);
+                        nameof(Order.Products), Order.ProductsProperty, productEntity, orderProductForeignKey, true, false)).Message);
         }
 
         [ConditionalFact]
@@ -1343,7 +1345,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 CoreStrings.NavigationToShadowEntity(nameof(Order.Products), nameof(Order), nameof(Product)),
                 Assert.Throws<InvalidOperationException>(
                     () => orderEntity.AddSkipNavigation(
-                        nameof(Order.Products), Order.ProductsProperty, productEntity, orderProductForeignKey, true, true)).Message);
+                        nameof(Order.Products), Order.ProductsProperty, productEntity, orderProductForeignKey, true, false)).Message);
         }
 
         [ConditionalFact]
@@ -1363,7 +1365,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 CoreStrings.NoClrNavigation(nameof(Order.Products), nameof(Product)),
                 Assert.Throws<InvalidOperationException>(
                     () => productEntity.AddSkipNavigation(
-                        nameof(Order.Products), Order.ProductsProperty, productEntity, orderProductForeignKey, true, true)).Message);
+                        nameof(Order.Products), Order.ProductsProperty, productEntity, orderProductForeignKey, true, false)).Message);
         }
 
         [ConditionalFact]
@@ -1383,7 +1385,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 CoreStrings.NavigationCollectionWrongClrType(nameof(Order.Products), nameof(Order), "ICollection<Product>", nameof(Order)),
                 Assert.Throws<InvalidOperationException>(
                     () => orderEntity.AddSkipNavigation(
-                        nameof(Order.Products), Order.ProductsProperty, orderEntity, orderProductForeignKey, true, true)).Message);
+                        nameof(Order.Products), Order.ProductsProperty, orderEntity, orderProductForeignKey, true, false)).Message);
         }
 
         [ConditionalFact]
@@ -1403,7 +1405,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 CoreStrings.NavigationSingleWrongClrType(nameof(Order.Products), nameof(Order), "ICollection<Product>", nameof(Order)),
                 Assert.Throws<InvalidOperationException>(
                     () => orderEntity.AddSkipNavigation(
-                        nameof(Order.Products), Order.ProductsProperty, orderEntity, orderProductForeignKey, false, true)).Message);
+                        nameof(Order.Products), Order.ProductsProperty, orderEntity, orderProductForeignKey, false, false)).Message);
         }
 
         [ConditionalFact]
@@ -1423,7 +1425,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 CoreStrings.PropertyWrongName(nameof(Order.Products), typeof(Order).Name, nameof(Order.RelatedOrder)),
                 Assert.Throws<InvalidOperationException>(() =>
                 orderEntity.AddSkipNavigation(
-                    nameof(Order.Products), Order.RelatedOrderProperty, productEntity, orderProductForeignKey, true, true)).Message);
+                    nameof(Order.Products), Order.RelatedOrderProperty, productEntity, orderProductForeignKey, true, false)).Message);
         }
 
         [ConditionalFact]
@@ -1443,7 +1445,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     nameof(Order.Products), nameof(Order), nameof(OrderProduct), "{'" + nameof(OrderProduct.OrderId) + "'}"),
                 Assert.Throws<InvalidOperationException>(
                     () => orderEntity.AddSkipNavigation(
-                        nameof(Order.Products), Order.ProductsProperty, productEntity, orderProductForeignKey, true, false)).Message);
+                        nameof(Order.Products), Order.ProductsProperty, productEntity, orderProductForeignKey, true, true)).Message);
         }
 
         [ConditionalFact]
@@ -1463,7 +1465,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     nameof(OrderProduct.Order), nameof(OrderProduct), nameof(Order), "{'" + nameof(OrderProduct.OrderId) + "'}"),
                 Assert.Throws<InvalidOperationException>(
                     () => orderProductEntity.AddSkipNavigation(
-                        nameof(OrderProduct.Order), null, orderEntity, orderProductForeignKey, false, true)).Message);
+                        nameof(OrderProduct.Order), null, orderEntity, orderProductForeignKey, false, false)).Message);
         }
 
         [ConditionalFact]

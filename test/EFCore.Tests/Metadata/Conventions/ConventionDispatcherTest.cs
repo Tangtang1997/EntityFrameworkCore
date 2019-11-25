@@ -1676,7 +1676,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Conventions
 
                 if (_terminate)
                 {
-                    if (navigation.IsDependentToPrincipal())
+                    if (navigation.IsOnDependent)
                     {
                         relationshipBuilder.Metadata.HasDependentToPrincipal((string)null);
                     }

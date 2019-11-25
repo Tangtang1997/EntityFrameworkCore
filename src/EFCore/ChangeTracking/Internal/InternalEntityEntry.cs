@@ -1206,7 +1206,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
                     if (propertyBase is INavigation navigation)
                     {
-                        if (!navigation.IsCollection())
+                        if (!navigation.IsCollection)
                         {
                             SetIsLoaded(navigation, value != null);
                         }
@@ -1618,7 +1618,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
             [NotNull] object sender,
             [NotNull] NotifyCollectionChangedEventArgs eventArgs)
         {
-            var navigation = EntityType.GetNavigations().FirstOrDefault(n => n.IsCollection() && this[n] == sender);
+            var navigation = EntityType.GetNavigations().FirstOrDefault(n => n.IsCollection && this[n] == sender);
             if (navigation != null)
             {
                 switch (eventArgs.Action)
@@ -1660,7 +1660,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         public virtual void SetIsLoaded([NotNull] INavigation navigation, bool loaded = true)
         {
             if (!loaded
-                && !navigation.IsCollection()
+                && !navigation.IsCollection
                 && this[navigation] != null)
             {
                 throw new InvalidOperationException(
@@ -1798,7 +1798,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
                     builder.AppendLine();
 
                     var currentValue = GetCurrentValue(navigation);
-                    var targetType = navigation.GetTargetType();
+                    var targetType = navigation.TargetEntityType;
 
                     builder
                         .Append("  ")
@@ -1809,7 +1809,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
                     {
                         builder.Append("<null>");
                     }
-                    else if (navigation.IsCollection())
+                    else if (navigation.IsCollection)
                     {
                         builder.Append('[');
 
