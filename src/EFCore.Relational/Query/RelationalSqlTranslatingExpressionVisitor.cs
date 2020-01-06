@@ -60,11 +60,9 @@ namespace Microsoft.EntityFrameworkCore.Query
 
                 translation = SqlExpressionFactory.ApplyDefaultTypeMapping(translation);
 
-                if ((translation is SqlConstantExpression
-                        || translation is SqlParameterExpression)
-                    && translation.TypeMapping == null)
+                if (translation.TypeMapping == null)
                 {
-                    // Non-mappable constant/parameter
+                    // The return type is not-mappable hence return null
                     return null;
                 }
 
@@ -334,6 +332,12 @@ namespace Microsoft.EntityFrameworkCore.Query
                 }
 
                 throw new InvalidOperationException("EF.Property called with wrong property name.");
+            }
+
+            // EF Indexer property
+            if (methodCallExpression.TryGetIndexerArguments(_model, out source, out propertyName))
+            {
+                return TryBindMember(source, MemberIdentity.Create(propertyName), out var result) ? result : null;
             }
 
             // GroupBy Aggregate case
